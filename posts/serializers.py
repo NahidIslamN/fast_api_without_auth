@@ -3,4 +3,6 @@ from pydantic import BaseModel
 ## write your serializers
 
 class TwitSerializers(BaseModel):
-    pass
+    title:str
+    description:str  
+    user_id:int
