@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from users.serializers import UserSerializers, UserSerializersPatch
+from users.serializers import UserSerializers, UserSerializersPatch, ResponseOut
 
 
 router = APIRouter(
@@ -29,7 +29,7 @@ async def get_userlist(db:AsyncSession=(Depends(get_db))):
 
 
 
-@router.post('/users/', status_code=status.HTTP_201_CREATED)
+@router.post('/users/', status_code=status.HTTP_201_CREATED, response_model=ResponseOut)
 async def register_user(user_data:UserSerializers,db:AsyncSession=(Depends(get_db))):
     new_user = User(
         frist_name = user_data.frist_name,
@@ -42,9 +42,10 @@ async def register_user(user_data:UserSerializers,db:AsyncSession=(Depends(get_d
     try:
         await db.commit()
         await db.refresh(new_user)
-        return{
+        return {
             "success":True,
-            "message":"user created successfull"
+            "message":"user created successfull!",
+            'user':new_user
         }
     except:
         raise HTTPException(

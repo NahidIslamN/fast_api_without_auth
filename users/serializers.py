@@ -16,3 +16,18 @@ class UserSerializersPatch(BaseModel):
     frist_name:Optional[str] = None
     last_name:Optional[str] = None
     username:Optional[str] = None
+
+
+
+class UserOut(BaseModel):
+    frist_name:str
+    last_name:str
+    username:str
+
+
+
+class ResponseOut(BaseModel):
+    success:bool
+    message:str
+    user:UserOut
+

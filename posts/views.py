@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload, defer
-from posts.serializers import TwitSerializers, ReactSerializers
+from posts.serializers import TwitSerializers, ReactSerializers,  TwitOut
+from typing import List
 
 
 
@@ -14,18 +15,13 @@ post_router = APIRouter(
     tags=["Twits"]
 )
 
-@post_router.get('/posts/', status_code=status.HTTP_200_OK)
+@post_router.get('/posts/', status_code=status.HTTP_200_OK, response_model=list[TwitOut])
 async def get_post_lists(db:AsyncSession = Depends(get_db)):
     db_operations = await db.execute(
-        select(Twit)
+        select(Twit).options(selectinload(Twit.reacts).options(selectinload(React.creator)))
     )
     posts =db_operations.scalars().all()
-    return {
-        "success":True,
-        "message":"data fatched !",
-        "twits":posts
-    }
-
+    return posts
 
 @post_router.post('/posts/', status_code=status.HTTP_200_OK)
 async def create_twit(twit_data:TwitSerializers, db:AsyncSession = Depends(get_db)):
@@ -123,5 +119,27 @@ async def create_twit(pk:int, react_data:ReactSerializers, db:AsyncSession = Dep
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="twit not found with this id!"
         )
+
+
+@post_router.get("/posts-usres/{pk}", status_code=status.HTTP_200_OK, response_model=list[TwitOut])
+async def get_user_post_with_react(pk:int, db:AsyncSession=Depends(get_db)):
+    user = await db.get(User, pk)
+    if not user:
+        return {"success": False, "message": "user not found!"}
+
+    db_operations = await db.execute(
+        select(Twit)
+        .where(Twit.user_id == pk)
+        .options(
+            selectinload(Twit.reacts)
+            .options(
+                selectinload(React.creator)
+            )
+        )
+    )
+
+    twits = db_operations.scalars().all()
+
+    return twits
 
 
